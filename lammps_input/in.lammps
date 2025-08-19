@@ -1,0 +1,35 @@
+# TiO2-water
+plugin load  libdeepmd_lmp.so
+
+variable temperature equal 300
+
+units           metal
+boundary        p p p
+atom_style      atomic
+
+neighbor        2.0 bin
+neigh_modify    every 10 delay 0 check no
+
+read_data        input.lammps
+#read_restart    lammps.restart
+#reset_timestep  0
+mass		    1 12.011
+mass            2 2.014
+mass            3 15.999
+mass            4 47.867
+
+pair_style      deepmd ../../final_nn/frozen_model_1.pb ../../final_nn/frozen_model_2.pb ../../final_nn/frozen_model_3.pb
+pair_coeff  * *
+
+velocity        all create 300 2342
+
+fix             1 all nvt temp ${temperature} ${temperature} $(100.0*dt)
+timestep        0.0005
+thermo_style    custom step pe ke etotal temp press vol
+thermo          100
+dump            1 all atom 100 dump_lammps
+
+timer timeout 23:55:00 every 100
+run             20000000
+
+write_restart lammps.restart

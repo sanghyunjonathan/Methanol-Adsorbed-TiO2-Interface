@@ -1,0 +1,91 @@
+RESTART
+UNITS LENGTH=A TIME=ps
+
+#Atoms involed in sampling
+GROUP ATOMS=137 LABEL=ti5c_ads #ti5c with selected methanol adsorbed
+GROUP ATOMS=194 LABEL=meoh_oads #selected Ome
+GROUP ATOMS=196 LABEL=meoh_h_pull #H1
+GROUP ATOMS=142 LABEL=o2c_target #selected O2c
+GROUP ATOMS=660 LABEL=h2o_o #selected Ow
+Group atoms=658 label=h2o_h1 #H2
+Group atoms=659 label=h2o_h2 #H3
+
+#Selected O, H
+GROUP ATOMS=658,659,196 LABEL=h_sel #h from selected h2o(2), meoh(1)
+GROUP ATOMS=660,194,142 LABEL=o_sel #o from selected h2o(1), meoh(1), o2c(1)
+
+#Unselected O, H
+GROUP ATOMS=205-655:3,206-656:3,202 LABEL=h_unsel #h2o, meoh
+GROUP ATOMS=207-657:3,200,1,2,45,46,49,50,93,94,97,98,141,145,146,189,190 LABEL=o_unsel #h2o, meoh, o2c
+
+#All Ti5c
+GROUP ATOMS=3,4,51,52,99,100,147,148,41,42,89,90,137,138,185,186 LABEL=ti5c_all #all ti5cs (sel + all)
+
+#All MeOH O For desorption
+GROUP ATOMS=194,200 LABEL=meoh_o_all
+
+#Form CV variables
+DISTANCES LABEL=b1 GROUPA=meoh_h_pull GROUPB=meoh_oads MEAN
+DISTANCES LABEL=b2 GROUPA=h2o_o GROUPB=h2o_h1 MEAN
+
+DISTANCES LABEL=h1 GROUPA=meoh_h_pull GROUPB=h2o_o MEAN
+DISTANCES LABEL=h2 GROUPA=h2o_h1 GROUPB=o2c_target MEAN
+
+DISTANCES LABEL=d1 GROUPA=h2o_o GROUPB=meoh_oads MEAN
+DISTANCES LABEL=d2 GROUPA=h2o_o GROUPB=o2c_target MEAN
+
+COMBINE LABEL=dooo ARG=d1.mean,d2.mean COEFFICIENTS=0.5,0.5 POWERS=1,1 PERIODIC=NO #This is CV1
+COMBINE LABEL=v1 ARG=b1.mean,h1.mean COEFFICIENTS=1,-1 POWERS=1,1 PERIODIC=NO
+COMBINE LABEL=v2 ARG=b2.mean,h2.mean COEFFICIENTS=1,-1 POWERS=1,1 PERIODIC=NO
+COMBINE LABEL=cv2 ARG=v1,v2 COEFFICIENTS=0.5,0.5 POWERS=1,1 PERIODIC=NO
+
+#MeOH can't desorb
+COORDINATION LABEL=coord_meoh GROUPA=ti5c_all GROUPB=meoh_o_all NN=4 MM=10 D_0=2.1 R_0=0.75
+LOWER_WALLS ARG=coord_meoh AT=1.8 KAPPA=1000.0 EXP=2 LABEL=lwall
+
+#Restriction on cv1
+UPPER_WALLS ARG=d1.mean AT=3.5 KAPPA=1000.0 EXP=2 LABEL=duwall
+UPPER_WALLS ARG=d2.mean AT=3.5 KAPPA=1000.0 EXP=2 LABEL=duwall2
+
+#Restriction on cv2
+UPPER_WALLS ARG=cv2 AT=2.0 KAPPA=1000.0 EXP=2 LABEL=cuwall
+LOWER_WALLS ARG=cv2 AT=-2.0 KAPPA=1000.0 EXP=2 LABEL=clwall
+
+#Selected O2c MeoH and H2O can't accept unselected protons
+COORDINATION LABEL=osel_hunsel GROUPA=o_sel GROUPB=h_unsel NN=12 MM=24 D_0=0.8 R_0=0.5
+UPPER_WALLS ARG=osel_hunsel AT=0.2 KAPPA=1000.0 EXP=2 LABEL=wall1
+
+#Selected protons can't bind to unselected O
+COORDINATION LABEL=ounsel_hsel GROUPA=o_unsel GROUPB=h_sel NN=12 MM=24 D_0=0.8 R_0=0.5
+UPPER_WALLS ARG=ounsel_hsel AT=0.2 KAPPA=1000.0 EXP=2 LABEL=wall2
+
+#h2o_h2 should not dissociate
+COORDINATION LABEL=h2o_oh2 GROUPA=h2o_o GROUPB=h2o_h2 NN=12 MM=24 D_0=0.8 R_0=0.5
+LOWER_WALLS ARG=h2o_oh2 AT=0.8 KAPPA=1000.0 EXP=2 LABEL=wall3
+
+#h2o_h1 should not transfer to MeOH
+COORDINATION LABEL=h2o_oh1 GROUPA=meoh_oads GROUPB=h2o_h1 NN=12 MM=24 D_0=0.8 R_0=0.5
+UPPER_WALLS ARG=h2o_oh1 AT=0.2 KAPPA=1000.0 EXP=2 LABEL=wall4
+
+#meoh_h_pull should not transfer to O2c
+COORDINATION LABEL=meoh_h_o2c GROUPA=meoh_h_pull GROUPB=o2c_target NN=12 MM=24 D_0=0.8 R_0=0.5
+UPPER_WALLS ARG=meoh_h_o2c AT=0.2 KAPPA=1000.0 EXP=2 LABEL=wall5
+
+METAD ...
+LABEL=metad
+ARG=dooo,cv2
+PACE=1000
+HEIGHT=1.2
+SIGMA=0.1,0.1
+FILE=HILLS
+BIASFACTOR=10
+TEMP=300
+... METAD
+
+FLUSH STRIDE=1
+PRINT ...
+ ARG=b1.mean,b2.mean,h1.mean,h2.mean,d1.mean,d2.mean,coord_meoh  
+ STRIDE=10
+ FILE=COLVAR
+ FMT=%8.4f
+... PRINT 

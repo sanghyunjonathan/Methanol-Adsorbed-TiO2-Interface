@@ -1,0 +1,91 @@
+{
+    "_comment": "that's all",
+    "model": {
+        "type_map": [
+            "C",
+            "H",
+            "O",
+	    "Ti"
+        ],
+        "descriptor": {
+            "type": "se_e2_a",
+            "sel": [
+                16,
+                136,
+                72,
+		48
+            ],
+            "rcut_smth": 3.0,
+            "rcut": 6.0,
+            "neuron": [
+                25,
+                50,
+                100
+            ],
+            "resnet_dt": false,
+            "axis_neuron": 12,
+            "seed": SEED,
+            "_comment": " that's all"
+        },
+        "fitting_net": {
+            "neuron": [
+                120,
+                120,
+                120
+            ],
+            "resnet_dt": true,
+            "seed": SEED,
+            "_comment": " that's all"
+        },
+        "_comment": " that's all"
+    },
+    "learning_rate": {
+        "type": "exp",
+        "start_lr": 0.005,
+        "decay_steps": 5000,
+        "_comment": "that's all",
+        "stop_lr": 1.752633312441437e-07
+    },
+    "loss": {
+        "start_pref_e": 0.02,
+        "limit_pref_e": 1,
+        "start_pref_f": 1000,
+        "limit_pref_f": 1,
+        "start_pref_v": 0,
+        "limit_pref_v": 0,
+        "_comment": " that's all"
+    },
+    "training": {
+        "stop_batch": 1000000,
+        "seed": SEED,
+        "_comment": "that's all",
+        "disp_file": "lcurve.out",
+        "disp_freq": 100,
+        "numb_test": 10,
+        "save_freq": 1000,
+        "save_ckpt": "model.ckpt",
+        "disp_training": true,
+        "time_training": true,
+        "profiling": false,
+        "profiling_file": "timeline.json",
+        "training_data": {
+            "systems": [
+                "../raw/bulk_anatase",
+                "../raw/a101_water",
+                "../raw/water",
+				"../raw/bulk_rutile",
+				"../raw/r110_water",
+				"../raw/meoh_di",
+                "../raw/meoh_mono",
+                "../raw/a101_meoh_lc",
+                "../raw/a101_meoh_hc",
+                "../raw/a101_meoh_sol",
+                "../raw/r110_meoh_lc",
+                "../raw/r110_meoh_hc",
+                "../raw/r110_meoh_sol"
+                       ],
+            "set_prefix": "set",
+            "batch_size": "auto"
+        }
+    }
+}

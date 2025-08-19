@@ -1,0 +1,48 @@
+#RESTART
+UNITS LENGTH=A TIME=ps
+
+#Selected atoms
+GROUP ATOMS=137 LABEL=ti5c_ads #ti5c with selected methanol adsorbed
+GROUP ATOMS=194 LABEL=meoh_oads #selected methanol
+GROUP ATOMS=196 LABEL=meoh_h_pull #selected H, aka h_sel
+GROUP ATOMS=142 LABEL=o2c_target #selected o2c
+GROUP ATOMS=194,142 LABEL=o_sel #group selected O
+
+#Unselected atoms
+GROUP ATOMS=205-658:3,206-659:3,202 LABEL=h_unsel #water and meoh_h
+GROUP ATOMS=207-660:3,200,1,2,45,46,49,50,93,94,97,98,141,145,146,189,190 LABEL=o_unsel #water, meoh_o, o2c
+
+#All ti5c and meoh
+GROUP ATOMS=3,4,51,52,99,100,147,148,41,42,89,90,137,138,185,186 LABEL=ti5c_all
+GROUP ATOMS=194,200 LABEL=meoh_o_all
+GROUP ATOMS=196,202 LABEL=meoh_h_all
+
+#Define useful CVs
+DISTANCES LABEL=dist1 GROUPA=meoh_h_pull GROUPB=o2c_target MEAN
+DISTANCES LABEL=dist2 GROUPA=meoh_h_pull GROUPB=meoh_oads MEAN
+DISTANCES LABEL=dist3 GROUPA=ti5c_ads GROUPB=meoh_oads MEAN
+COORDINATION LABEL=oh_num GROUPA=meoh_o_all GROUPB=meoh_h_all NN=8 MM=16 D_0=0.975 R_0=0.2
+
+#Apply umbrella potential to d2-d1   
+COMBINE LABEL=d12m ARG=dist1.mean,dist2.mean COEFFICIENTS=-1,1 POWERS=1,1 PERIODIC=NO
+RESTRAINT ARG=d12m KAPPA=500 AT=HERE #replace 'HERE' with distance 
+
+#Don't let MeOH desorb
+COORDINATION LABEL=coord_meoh GROUPA=ti5c_all GROUPB=meoh_o_all NN=4 MM=10 D_0=2.1 R_0=0.75
+LOWER_WALLS ARG=coord_meoh AT=1.5 KAPPA=1000.0 EXP=2 LABEL=lwall
+
+#Selected O2c MeoH and o2c can't accept other protons
+COORDINATION LABEL=osel_hunsel GROUPA=o_sel GROUPB=h_unsel NN=8 MM=16 D_0=0.975 R_0=0.2
+UPPER_WALLS ARG=osel_hunsel AT=0.1 KAPPA=1000.0 EXP=2 LABEL=oselhwall
+
+#Selected protons can't bind to other H2O or O2c
+COORDINATION LABEL=ounsel_hsel GROUPA=o_unsel GROUPB=meoh_h_pull NN=8 MM=16 D_0=0.975 R_0=0.2
+UPPER_WALLS ARG=ounsel_hsel AT=0.1 KAPPA=1000.0 EXP=2 LABEL=ohselwall1
+
+FLUSH STRIDE=1
+PRINT ...
+ ARG=dist1.mean,dist2.mean,dist3.mean,oh_num,coord_meoh,d12m
+ STRIDE=1
+ FILE=COLVAR
+ FMT=%8.4f
+... PRINT 
